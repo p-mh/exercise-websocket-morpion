@@ -7,10 +7,10 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 const {
-  createNewGameBoard,
-  getWinner,
-  getIsFinish,
-  getNewGameBoard,
+  newGameStates_createNewGame,
+  newGameStates_joinExistingGame,
+  newGameStates_playing,
+  newGameStates_resetGame,
 } = require('./utilsFunc');
 
 let gameStates = {};
@@ -34,64 +34,24 @@ io.on('connection', socket => {
     );
     if (gameToJoin) {
       const { id: gameId } = gameToJoin;
-      const { [gameId]: gameToChange, ...otherGames } = gameStates;
+      gameStates = newGameStates_joinExistingGame(socket, gameId, gameStates);
       socket.emit('playerId', 2);
-      gameStates = {
-        [gameId]: {
-          ...gameToChange,
-          players: [...gameToChange.players, socket],
-          completeGame: true,
-        },
-        ...otherGames,
-      };
       emitGameToPlayers(gameId);
     } else {
-      socket.emit('playerId', 1);
       const gameId = Date.now();
-      const newGame = {
-        id: gameId,
-        players: [socket],
-        completeGame: false,
-        turn: 1,
-        gameBoard: createNewGameBoard(8),
-        isFinish: false,
-        winner: null,
-      };
-      gameStates = {
-        ...gameStates,
-        [gameId]: newGame,
-      };
+      gameStates = newGameStates_createNewGame(socket, gameId, gameStates);
+      socket.emit('playerId', 1);
       emitGameToPlayers(gameId);
     }
   });
 
   socket.on('gameBoard', ({ gameId, cellPlayedIndex }) => {
-    const { [gameId]: gameToChange, ...otherGames } = gameStates;
-    const newGameState = {
-      id: gameId,
-      players: gameToChange.players,
-      completeGame: true,
-      turn: gameToChange.turn === 1 ? 2 : 1,
-      winner: getWinner(cellPlayedIndex, gameToChange),
-      gameBoard: getNewGameBoard(cellPlayedIndex, gameToChange),
-      isFinish: getIsFinish(cellPlayedIndex, gameToChange),
-    };
-    gameStates = { [gameId]: newGameState, ...otherGames };
+    gameStates = newGameStates_playing(gameId, cellPlayedIndex, gameStates);
     emitGameToPlayers(gameId);
   });
 
   socket.on('resetGame', gameId => {
-    const { [gameId]: gameToChange, ...otherGames } = gameStates;
-    const newGameState = {
-      id: gameId,
-      players: gameToChange.players,
-      completeGame: true,
-      turn: gameToChange.winner === 1 ? 2 : 1,
-      gameBoard: createNewGameBoard(8),
-      isFinish: false,
-      winner: null,
-    };
-    gameStates = { [gameId]: newGameState, ...otherGames };
+    gameStates = newGameStates_resetGame(gameId, gameStates);
     emitGameToPlayers(gameId);
   });
 
