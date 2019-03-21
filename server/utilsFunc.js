@@ -34,71 +34,10 @@ const getNewGameBoard = (index, { gameBoard, turn }) => ({
   [index]: turn,
 });
 
-newGameStates_createNewGame = (socket, gameId, gameStates) => {
-  const newGame = {
-    id: gameId,
-    players: [socket],
-    completeGame: false,
-    turn: 1,
-    gameBoard: createNewGameBoard(8),
-    isFinish: false,
-    winner: null,
-  };
-  return {
-    ...gameStates,
-    [gameId]: newGame,
-  };
-};
-
-newGameStates_joinExistingGame = (socket, gameId, gameStates) => {
-  const { [gameId]: gameToChange, ...otherGames } = gameStates;
-  return {
-    [gameId]: {
-      ...gameToChange,
-      players: [...gameToChange.players, socket],
-      completeGame: true,
-    },
-    ...otherGames,
-  };
-};
-
-const newGameStates_playing = (gameId, cellPlayedIndex, gameStates) => {
-  const { [gameId]: gameToChange, ...otherGames } = gameStates;
-  const { players, turn, gameBoard, completeGame } = gameToChange;
-  const newGameState = {
-    id: gameId,
-    players,
-    completeGame,
-    turn: turn === 1 ? 2 : 1,
-    winner: getWinner(cellPlayedIndex, { gameBoard, turn }),
-    gameBoard: getNewGameBoard(cellPlayedIndex, { gameBoard, turn }),
-    isFinish: getIsFinish(cellPlayedIndex, { gameBoard, turn }),
-  };
-  return { [gameId]: newGameState, ...otherGames };
-};
-
-const newGameStates_resetGame = (gameId, gameStates) => {
-  const { [gameId]: gameToChange, ...otherGames } = gameStates;
-  const { id, players, winner, completeGame } = gameToChange;
-  const newGameState = {
-    id,
-    players,
-    completeGame,
-    turn: gameToChange.winner === 1 ? 2 : 1,
-    gameBoard: createNewGameBoard(8),
-    isFinish: false,
-    winner: null,
-  };
-  return { [gameId]: newGameState, ...otherGames };
-};
 
 module.exports = {
   createNewGameBoard,
   getWinner,
   getIsFinish,
   getNewGameBoard,
-  newGameStates_createNewGame,
-  newGameStates_joinExistingGame,
-  newGameStates_playing,
-  newGameStates_resetGame,
 };

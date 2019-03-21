@@ -73,10 +73,8 @@ export default class Game extends Component {
             </div>
           ) : (
             <div>
-              <p>
-                Game is over.{' '}
-                {winner ? (winner === 1 ? 'x ' : 'o ') : 'Nobody '} win !
-              </p>
+              <p>Game is over.</p>
+              <p>{winner ? (winner === 1 ? 'x ' : 'o ') : 'Nobody '} win !</p>
               <button onClick={resetGame.bind(this, this.state.id)}>
                 Play Again
               </button>

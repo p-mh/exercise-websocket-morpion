@@ -7,11 +7,21 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 const {
-  newGameStates_createNewGame,
-  newGameStates_joinExistingGame,
-  newGameStates_playing,
-  newGameStates_resetGame,
-} = require('./utilsFunc');
+  PLAYER_ID,
+  GAMESTATE,
+  GAMEBOARD,
+  RESETGAME,
+  NEW_GAME,
+  END_GAME,
+  DISCONNECT,
+} = require('../commons/constantes');
+
+const {
+  createNewGame,
+  joinExistingGame,
+  playing,
+  resetGame,
+} = require('./newGameStatesFuncs');
 
 let gameStates = {};
 
@@ -23,45 +33,45 @@ const emitGameToPlayers = gameId => {
     const {
       [gameId]: { players, ...gameState },
     } = gameStates;
-    socket.emit('gameState', gameState);
+    socket.emit(GAMESTATE, gameState);
   });
 };
 
 io.on('connection', socket => {
-  socket.on('newGame', () => {
+  socket.on(NEW_GAME, () => {
     const gameToJoin = Object.values(gameStates).find(
       ({ players }) => players.length < 2
     );
     if (gameToJoin) {
       const { id: gameId } = gameToJoin;
-      gameStates = newGameStates_joinExistingGame(socket, gameId, gameStates);
-      socket.emit('playerId', 2);
+      gameStates = joinExistingGame(socket, gameId, gameStates);
+      socket.emit(PLAYER_ID, 2);
       emitGameToPlayers(gameId);
     } else {
       const gameId = Date.now();
-      gameStates = newGameStates_createNewGame(socket, gameId, gameStates);
-      socket.emit('playerId', 1);
+      gameStates = createNewGame(socket, gameId, gameStates);
+      socket.emit(PLAYER_ID, 1);
       emitGameToPlayers(gameId);
     }
   });
 
-  socket.on('gameBoard', ({ gameId, cellPlayedIndex }) => {
-    gameStates = newGameStates_playing(gameId, cellPlayedIndex, gameStates);
+  socket.on(GAMEBOARD, ({ gameId, cellPlayedIndex }) => {
+    gameStates = playing(gameId, cellPlayedIndex, gameStates);
     emitGameToPlayers(gameId);
   });
 
-  socket.on('resetGame', gameId => {
-    gameStates = newGameStates_resetGame(gameId, gameStates);
+  socket.on(RESETGAME, gameId => {
+    gameStates = resetGame(gameId, gameStates);
     emitGameToPlayers(gameId);
   });
 
-  socket.on('disconnect', () => {
+  socket.on(DISCONNECT, () => {
     const gameStatePlayed = Object.values(gameStates).find(({ players }) =>
       players.includes(socket)
     );
     if (gameStatePlayed) {
       gameStatePlayed.players.forEach(socket => {
-        socket.emit('endGame');
+        socket.emit(END_GAME);
       });
       const { [gameStatePlayed.id]: gameToRemove, ...otherGames } = gameStates;
       gameStates = otherGames;

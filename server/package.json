@@ -5,6 +5,10 @@
     "socket.io": "^2.2.0"
   },
   "scripts": {
-    "start:dev": "nodemon index.js"
+    "start:dev": "nodemon index.js",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^24.5.0"
   }
 }
